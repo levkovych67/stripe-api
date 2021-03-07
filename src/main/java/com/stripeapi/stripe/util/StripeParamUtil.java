@@ -64,5 +64,12 @@ public class StripeParamUtil {
                 .build();
     }
 
+    public static Map<String, Object> buildCardRetrieveParams() {
+        final Map<String, Object> params = new HashMap<>();
+        params.put("object", "card");
+        params.put("limit", 10);
+        return params;
+    }
+
 
 }

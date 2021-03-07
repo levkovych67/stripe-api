@@ -11,6 +11,7 @@ import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.CustomerListParams;
 import com.stripe.param.CustomerRetrieveParams;
 import com.stripeapi.stripe.dto.CardDTO;
+import com.stripeapi.stripe.dto.ChargeDTO;
 import com.stripeapi.stripe.dto.CustomerDTO;
 import com.stripeapi.stripe.dto.PaymentDTO;
 import org.springframework.beans.factory.annotation.Value;
@@ -75,19 +76,17 @@ public class StripeService {
         checkIfCardIsDuplicate(customer, card);
     }
 
-    private List<Card> getCustomerCards(Customer customer) {
-        Map<String, Object> params = new HashMap<>();
-        params.put("object", "card");
-        params.put("limit", 10);
+    private List<Card> getCustomerCards(final Customer customer) {
+        final Map<String, Object> cardRetrieveParams = buildCardRetrieveParams();
         try {
-            return (List<Card>) (List<?>) customer.getSources().list(params).getData();
+            return (List<Card>) (List<?>) customer.getSources().list(cardRetrieveParams).getData();
         } catch (StripeException e) {
             throw new RuntimeException("Could not get cards for customer with email " + customer.getEmail());
         }
     }
 
     private void checkIfCardIsDuplicate(final Customer customer, final Card card) {
-        List<Card> customerCards = getCustomerCards(customer);
+        final List<Card> customerCards = getCustomerCards(customer);
         if (customerCards.stream().anyMatch(e -> e.getFingerprint().equals(card.getFingerprint()))) {
             throw new RuntimeException("Card with fingerprint " + card.getFingerprint() + " already exists for " + customer.getEmail());
         }
@@ -113,31 +112,33 @@ public class StripeService {
         }
     }
 
-    private void checkIfCustomerOwnsCard(Customer customer, String cardId) {
-        List<Card> customerCards = getCustomerCards(customer);
+    private void checkIfCustomerOwnsCard(final Customer customer, final String cardId) {
+        final List<Card> customerCards = getCustomerCards(customer);
         if (customerCards.stream().noneMatch(e -> e.getId().equals(cardId))) {
             throw new RuntimeException("Delуting non existing card with id " + cardId + " for " + customer.getEmail());
         }
     }
 
-    public List<CardDTO> listCards(String customerId) {
+    public List<CardDTO> listCards(final String customerId) {
         final Customer customerById = getCustomerById(customerId);
         final List<Card> customerCards = getCustomerCards(customerById);
         return customerCards.stream().map(CardDTO::new).collect(Collectors.toList());
     }
 
-    public void chargeFromCustomerCard(final String customerId, final Long amount, final String cardId) throws StripeException {
+    public ChargeDTO chargeFromCustomerCard(final String customerId, final Long amount, final String cardId) throws StripeException {
         final Customer customerById = getCustomerById(customerId);
         checkIfCustomerOwnsCard(customerById, cardId);
         final ChargeCreateParams chargeCreateParams = buildChargeByParams(customerId, amount, cardId);
-        Charge.create(chargeCreateParams);
+        final Charge charge = Charge.create(chargeCreateParams);
+        return new ChargeDTO(charge);
     }
 
-    public void chargeFromCustomer(final String customerId, final Long amount) throws StripeException {
+    public ChargeDTO chargeFromCustomer(final String customerId, final Long amount) throws StripeException {
         final Customer customerById = getCustomerById(customerId);
         final String defaultSource = customerById.getDefaultSource();
-        final ChargeCreateParams chargeCreateParams = buildChargeByParams(customerId, 200L, defaultSource);
-        Charge.create(chargeCreateParams);
+        final ChargeCreateParams chargeCreateParams = buildChargeByParams(customerId, amount, defaultSource);
+        final Charge charge = Charge.create(chargeCreateParams);
+        return new ChargeDTO(charge);
     }
 
 
