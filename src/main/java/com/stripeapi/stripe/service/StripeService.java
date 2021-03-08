@@ -2,18 +2,15 @@ package com.stripeapi.stripe.service;
 
 import com.stripe.Stripe;
 import com.stripe.exception.StripeException;
-import com.stripe.model.Card;
-import com.stripe.model.Charge;
-import com.stripe.model.Customer;
-import com.stripe.model.Token;
+import com.stripe.model.*;
 import com.stripe.param.ChargeCreateParams;
 import com.stripe.param.CustomerCreateParams;
 import com.stripe.param.CustomerListParams;
 import com.stripe.param.CustomerRetrieveParams;
 import com.stripeapi.stripe.dto.CardDTO;
+import com.stripeapi.stripe.dto.ChargeCollectionDTO;
 import com.stripeapi.stripe.dto.ChargeDTO;
 import com.stripeapi.stripe.dto.CustomerDTO;
-import com.stripeapi.stripe.dto.PaymentDTO;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
@@ -142,9 +139,18 @@ public class StripeService {
     }
 
 
-    //TODO list all payments
-    //TODO list all payments with filter
-    public List<PaymentDTO> listPayments(final String customerId) throws StripeException {
-        return null;
+    public ChargeCollectionDTO listPayments(final String customerId, final int limit) throws StripeException {
+        final Map<String, Object> params = buildChargeListRetrieveParams(customerId, limit);
+        return charge(params);
+    }
+
+    public ChargeCollectionDTO listPayments(final String customerId, final int limit, final Long start, final Long end) throws StripeException {
+        final Map<String, Object> params = buildChargeListRetrieveParamsWithPeriod(customerId, limit, start, end);
+        return charge(params);
+    }
+
+    private ChargeCollectionDTO charge(final Map<String, Object> params) throws StripeException {
+        final ChargeCollection charges = Charge.list(params);
+        return new ChargeCollectionDTO(charges);
     }
 }

@@ -3,6 +3,7 @@ package com.stripeapi.stripe.controller;
 
 import com.stripe.exception.StripeException;
 import com.stripeapi.stripe.dto.CardDTO;
+import com.stripeapi.stripe.dto.ChargeCollectionDTO;
 import com.stripeapi.stripe.dto.CustomerDTO;
 import com.stripeapi.stripe.service.StripeService;
 import com.stripeapi.stripe.util.StripeParamUtil;
@@ -65,8 +66,15 @@ public class StripeController {
 
     //LIST OF ALL PAYMENTS
     //LIST OF ALL PAYMENTS WITH FILTER
-    @GetMapping("/payments/{customerId}")
-    private void getPayments(@PathVariable String customerId) throws StripeException {
-        stripeService.listPayments(customerId);
+    @GetMapping("/payments/{customerId}/{limit}")
+    private void getPayments(@PathVariable String customerId, @PathVariable int limit) throws StripeException {
+        ChargeCollectionDTO chargeCollectionDTO = stripeService.listPayments(customerId, limit);
+        System.out.println(chargeCollectionDTO);
+    }
+
+    @GetMapping("/payments/{customerId}/{start}/{end}/{limit}")
+    private void getPayments(@PathVariable String customerId, @PathVariable Long start, @PathVariable Long end, @PathVariable int limit) throws StripeException {
+        ChargeCollectionDTO chargeCollectionDTO = stripeService.listPayments(customerId, limit, start, end);
+        System.out.println(chargeCollectionDTO);
     }
 }
